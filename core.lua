@@ -1,5 +1,4 @@
--- Combined Universal Anti-Lag & Preload System
--- Place in StarterPlayer -> StarterPlayerScripts
+
 
 local ContentProvider = game:GetService("ContentProvider")
 local Lighting = game:GetService("Lighting")
