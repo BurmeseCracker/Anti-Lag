@@ -8,178 +8,18 @@ local TeleportService = game:GetService("TeleportService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- 1. Main ScreenGui
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "PingFPSGui"
-screenGui.ResetOnSpawn = false
-screenGui.Parent = PlayerGui
+-- Script 1 က ဖန်တီးထားသော UI များကို ရယူခြင်း
+local screenGui = PlayerGui:WaitForChild("PingFPSGui")
+local statsFrame = screenGui:WaitForChild("StatsFrame")
+local pingLabel = statsFrame:WaitForChild("PingLabel")
+local fpsLabel = statsFrame:WaitForChild("FPSLabel")
 
--- =========================================
--- A. PING & FPS UI (အမြဲတမ်း Visible = True)
--- =========================================
-local statsFrame = Instance.new("Frame")
-statsFrame.Name = "StatsFrame"
-statsFrame.Size = UDim2.new(0, 110, 0, 50)
-statsFrame.Position = UDim2.new(0.02, 0, 0.1, 0)
-statsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
-statsFrame.BorderSizePixel = 0
-statsFrame.Active = true
-statsFrame.Visible = true -- Ping & FPS ကို အမြဲမြင်ရမည်
-statsFrame.Parent = screenGui
+local lagFrame = screenGui:WaitForChild("LagFrame")
+local buttonContainer = lagFrame:WaitForChild("ButtonContainer")
+local yesBtn = buttonContainer:WaitForChild("YesButton")
+local noBtn = buttonContainer:WaitForChild("NoButton")
 
-local statsCorner = Instance.new("UICorner")
-statsCorner.CornerRadius = UDim.new(0, 8)
-statsCorner.Parent = statsFrame
-
-local statsStroke = Instance.new("UIStroke")
-statsStroke.Color = Color3.fromRGB(50, 50, 70)
-statsStroke.Thickness = 1.5
-statsStroke.Parent = statsFrame
-
-local statsPadding = Instance.new("UIPadding")
-statsPadding.PaddingTop = UDim.new(0, 6)
-statsPadding.PaddingLeft = UDim.new(0, 10)
-statsPadding.Parent = statsFrame
-
-local statsList = Instance.new("UIListLayout")
-statsList.SortOrder = Enum.SortOrder.LayoutOrder
-statsList.Padding = UDim.new(0, 2)
-statsList.Parent = statsFrame
-
--- Ping Display Label
-local pingLabel = Instance.new("TextLabel")
-pingLabel.Name = "PingLabel"
-pingLabel.Size = UDim2.new(1, 0, 0, 18)
-pingLabel.BackgroundTransparency = 1
-pingLabel.Font = Enum.Font.GothamBold
-pingLabel.TextSize = 12
-pingLabel.TextColor3 = Color3.fromRGB(0, 255, 120)
-pingLabel.TextXAlignment = Enum.TextXAlignment.Left
-pingLabel.Text = "PING: -- ms"
-pingLabel.LayoutOrder = 1
-pingLabel.Parent = statsFrame
-
--- FPS Display Label
-local fpsLabel = Instance.new("TextLabel")
-fpsLabel.Name = "FPSLabel"
-fpsLabel.Size = UDim2.new(1, 0, 0, 18)
-fpsLabel.BackgroundTransparency = 1
-fpsLabel.Font = Enum.Font.GothamBold
-fpsLabel.TextSize = 12
-fpsLabel.TextColor3 = Color3.fromRGB(0, 255, 120)
-fpsLabel.TextXAlignment = Enum.TextXAlignment.Left
-fpsLabel.Text = "FPS: --"
-fpsLabel.LayoutOrder = 2
-fpsLabel.Parent = statsFrame
-
--- =========================================
--- B. LAG DETECTION PROMPT BOX (သီးသန့် GUI Frame)
--- =========================================
-local lagFrame = Instance.new("Frame")
-lagFrame.Name = "LagFrame"
-lagFrame.Size = UDim2.new(0, 240, 0, 140)
-lagFrame.Position = UDim2.new(0.5, -120, 0.4, -70) -- စခရင်အလယ်တွင် ပေါ်မည်
-lagFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
-lagFrame.BorderSizePixel = 0
-lagFrame.Active = true
-lagFrame.Visible = false -- ၁ မိနစ်ပြည့်မှ ပေါ်မည်
-lagFrame.Parent = screenGui
-
-local lagCorner = Instance.new("UICorner")
-lagCorner.CornerRadius = UDim.new(0, 12)
-lagCorner.Parent = lagFrame
-
-local lagStroke = Instance.new("UIStroke")
-lagStroke.Color = Color3.fromRGB(255, 60, 60)
-lagStroke.Thickness = 1.5
-lagStroke.Parent = lagFrame
-
-local lagPadding = Instance.new("UIPadding")
-lagPadding.PaddingTop = UDim.new(0, 12)
-lagPadding.PaddingBottom = UDim.new(0, 12)
-lagPadding.PaddingLeft = UDim.new(0, 12)
-lagPadding.PaddingRight = UDim.new(0, 12)
-lagPadding.Parent = lagFrame
-
-local lagList = Instance.new("UIListLayout")
-lagList.SortOrder = Enum.SortOrder.LayoutOrder
-lagList.Padding = UDim.new(0, 8)
-lagList.Parent = lagFrame
-
--- Title: Lag Detection
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Name = "TitleLabel"
-titleLabel.Size = UDim2.new(1, 0, 0, 20)
-titleLabel.BackgroundTransparency = 1
-titleLabel.Font = Enum.Font.GothamBold
-titleLabel.TextSize = 15
-titleLabel.TextColor3 = Color3.fromRGB(255, 85, 85)
-titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-titleLabel.Text = "Lag Detection"
-titleLabel.LayoutOrder = 1
-titleLabel.Parent = lagFrame
-
--- Description
-local descLabel = Instance.new("TextLabel")
-descLabel.Name = "DescLabel"
-descLabel.Size = UDim2.new(1, 0, 0, 36)
-descLabel.BackgroundTransparency = 1
-descLabel.Font = Enum.Font.Gotham
-descLabel.TextSize = 11
-descLabel.TextColor3 = Color3.fromRGB(200, 200, 210)
-descLabel.TextWrapped = true
-descLabel.TextXAlignment = Enum.TextXAlignment.Left
-descLabel.TextYAlignment = Enum.TextYAlignment.Top
-descLabel.Text = "Rejoining will be more better experienced, wanna rejoin ?"
-descLabel.LayoutOrder = 2
-descLabel.Parent = lagFrame
-
--- Buttons Container
-local buttonContainer = Instance.new("Frame")
-buttonContainer.Name = "ButtonContainer"
-buttonContainer.Size = UDim2.new(1, 0, 0, 32)
-buttonContainer.BackgroundTransparency = 1
-buttonContainer.LayoutOrder = 3
-buttonContainer.Parent = lagFrame
-
-local buttonLayout = Instance.new("UIListLayout")
-buttonLayout.FillDirection = Enum.FillDirection.Horizontal
-buttonLayout.Padding = UDim.new(0, 8)
-buttonLayout.Parent = buttonContainer
-
--- Yes Button
-local yesBtn = Instance.new("TextButton")
-yesBtn.Name = "YesButton"
-yesBtn.Size = UDim2.new(0.5, -4, 1, 0)
-yesBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 100)
-yesBtn.Font = Enum.Font.GothamBold
-yesBtn.TextSize = 13
-yesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-yesBtn.Text = "Yes"
-yesBtn.Parent = buttonContainer
-
-local yesCorner = Instance.new("UICorner")
-yesCorner.CornerRadius = UDim.new(0, 6)
-yesCorner.Parent = yesBtn
-
--- No Button
-local noBtn = Instance.new("TextButton")
-noBtn.Name = "NoButton"
-noBtn.Size = UDim2.new(0.5, -4, 1, 0)
-noBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
-noBtn.Font = Enum.Font.GothamBold
-noBtn.TextSize = 13
-noBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-noBtn.Text = "No"
-noBtn.Parent = buttonContainer
-
-local noCorner = Instance.new("UICorner")
-noCorner.CornerRadius = UDim.new(0, 6)
-noCorner.Parent = noBtn
-
--- =========================================
--- 3. Draggable System (Frame နှစ်ခုလုံးအတွက်)
--- =========================================
+-- 1. Draggable Function
 local function makeDraggable(frame)
 	local dragging, dragInput, dragStart, startPos
 	frame.InputBegan:Connect(function(input)
@@ -213,9 +53,7 @@ end
 makeDraggable(statsFrame)
 makeDraggable(lagFrame)
 
--- =========================================
--- 4. Color Logic
--- =========================================
+-- 2. Color Helper Functions
 local function getFpsColor(fps)
 	if fps >= 50 then return Color3.fromRGB(0, 255, 120)
 	elseif fps >= 30 then return Color3.fromRGB(255, 200, 0)
@@ -228,9 +66,7 @@ local function getPingColor(ping)
 	else return Color3.fromRGB(255, 40, 40) end
 end
 
--- =========================================
--- 5. Realtime Ping/FPS Tracker + 1-Min Lag Logic
--- =========================================
+-- 3. Ping/FPS Realtime Tracker & 1-Min Lag Detection
 local lastUpdate = tick()
 local frameCount = 0
 local highPingTimer = 0
@@ -256,7 +92,7 @@ RunService.RenderStepped:Connect(function()
 		pingLabel.Text = "PING: " .. tostring(ping) .. " ms"
 		pingLabel.TextColor3 = getPingColor(ping)
 
-		-- Ping > 200 ms ဖြစ်ပါက Timer စမှတ်မည်
+		-- Ping > 200 ms ဖြစ်မှ စက္ကန့် စမှတ်မည်
 		if ping > 200 then
 			highPingTimer = highPingTimer + interval
 		else
@@ -265,7 +101,7 @@ RunService.RenderStepped:Connect(function()
 			end
 		end
 
-		-- ၁ မိနစ် (၆၀ စက္ကန့်) ပြည့်ပါက Lag Detection Box ပေါ်လာမည်
+		-- ၁ မိနစ် (၆၀ စက္ကန့်) နီတာ ပြည့်သွားမှ Lag Box ပေါ်လာမည်
 		if highPingTimer >= 30 and not isPromptShown then
 			isPromptShown = true
 			lagFrame.Visible = true
@@ -276,9 +112,7 @@ RunService.RenderStepped:Connect(function()
 	end
 end)
 
--- =========================================
--- 6. Rejoin Logic & Fast FFlags
--- =========================================
+-- 4. Fast Rejoin & FFlags
 local function applyFastRejoinFFlags()
 	local setfflag = setfflag or set_fflag or (setfflag and setfflag)
 	if setfflag then
@@ -297,14 +131,13 @@ local function applyFastRejoinFFlags()
 	end
 end
 
--- No Button: Lag Box ကို ပိတ်မည်
+-- 5. Button Actions
 noBtn.MouseButton1Click:Connect(function()
 	lagFrame.Visible = false
 	isPromptShown = false
 	highPingTimer = 0
 end)
 
--- Yes Button: Rejoin မည်
 yesBtn.MouseButton1Click:Connect(function()
 	local queue_on_teleport = queue_on_teleport or (syn and syn.queue_on_teleport) or (fluxus and fluxus.queue_on_teleport)
 	
