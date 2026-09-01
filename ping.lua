@@ -14,14 +14,15 @@ screenGui.Name = "PingFPSGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = PlayerGui
 
--- 2. Main Frame (Draggable Box)
+-- 2. Main Frame (Draggable Box) - စစချင်း မမြင်ရအောင် Enabled = false ပြုလုပ်ထားမည်
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 240, 0, 185)
+mainFrame.Size = UDim2.new(0, 240, 0, 200)
 mainFrame.Position = UDim2.new(0.05, 0, 0.1, 0)
 mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
 mainFrame.BorderSizePixel = 0
 mainFrame.Active = true
+mainFrame.Visible = false -- ၁ မိနစ်ပြည့်မှ ပေါ်လာမည်
 mainFrame.Parent = screenGui
 
 local uiCorner = Instance.new("UICorner")
@@ -34,15 +35,15 @@ uiStroke.Thickness = 1.5
 uiStroke.Parent = mainFrame
 
 local uiPadding = Instance.new("UIPadding")
-uiPadding.PaddingTop = UDim.new(0, 10)
-uiPadding.PaddingBottom = UDim.new(0, 10)
+uiPadding.PaddingTop = UDim.new(0, 12)
+uiPadding.PaddingBottom = UDim.new(0, 12)
 uiPadding.PaddingLeft = UDim.new(0, 12)
 uiPadding.PaddingRight = UDim.new(0, 12)
 uiPadding.Parent = mainFrame
 
 local listLayout = Instance.new("UIListLayout")
 listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-listLayout.Padding = UDim.new(0, 6)
+listLayout.Padding = UDim.new(0, 8)
 listLayout.Parent = mainFrame
 
 -- 3. Header Title (Lag Detection)
@@ -60,7 +61,8 @@ titleLabel.Parent = mainFrame
 
 -- 4. FPS & Ping Display
 local statsContainer = Instance.new("Frame")
-statsContainer.Size = UDim2.new(1, 0, 0, 22)
+statsContainer.Name = "StatsContainer"
+statsContainer.Size = UDim2.new(1, 0, 0, 24)
 statsContainer.BackgroundTransparency = 1
 statsContainer.LayoutOrder = 2
 statsContainer.Parent = mainFrame
@@ -68,6 +70,7 @@ statsContainer.Parent = mainFrame
 local statsLayout = Instance.new("UIListLayout")
 statsLayout.FillDirection = Enum.FillDirection.Horizontal
 statsLayout.HorizontalAlignment = Enum.HorizontalAlignment.SpaceBetween
+statsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 statsLayout.Parent = statsContainer
 
 local fpsLabel = Instance.new("TextLabel")
@@ -151,7 +154,7 @@ noCorner.CornerRadius = UDim.new(0, 6)
 noCorner.Parent = noBtn
 
 -- =========================================
--- 7. Draggable System
+-- 7. Draggable System (ဖိဆွဲရွှေ့နိုင်သည့်စနစ်)
 -- =========================================
 local dragging = false
 local dragInput, dragStart, startPos
@@ -203,23 +206,43 @@ local function getPingColor(ping)
 end
 
 -- =========================================
--- 9. FPS & Ping Loop
+-- 9. FPS & Ping Tracker + 1 Minute High Ping Detection
 -- =========================================
 local lastUpdate = tick()
 local frameCount = 0
+local highPingDuration = 0 -- Ping နီနေသော ကြာချိန် (စက္ကန့်)
+local isPromptShown = false
 
-RunService.RenderStepped:Connect(function()
+RunService.RenderStepped:Connect(function(deltaTime)
 	frameCount = frameCount + 1
 	local currentTime = tick()
 
+	-- ၀.၅ စက္ကန့်တိုင်း Ping/FPS Update လုပ်ခြင်း
 	if currentTime - lastUpdate >= 0.5 then
-		local fps = math.round(frameCount / (currentTime - lastUpdate))
+		local interval = currentTime - lastUpdate
+		local fps = math.round(frameCount / interval)
 		fpsLabel.Text = string.format("FPS: %d", fps)
 		fpsLabel.TextColor3 = getFpsColor(fps)
 
 		local ping = math.round(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
 		pingLabel.Text = string.format("PING: %d ms", ping)
 		pingLabel.TextColor3 = getPingColor(ping)
+
+		-- Ping > 200 ms (Ping နီနေလျှင်) အချိန်စမှတ်မည်
+		if ping > 200 then
+			highPingDuration = highPingDuration + interval
+		else
+			-- Ping ပြန်ကောင်းသွားပါက Timer ပြန်စပါမည်
+			if not isPromptShown then
+				highPingDuration = 0
+			end
+		end
+
+		-- Ping နီတာ စက္ကန့် ၆၀ (၁ မိနစ်) ဆက်တိုက်ဖြစ်ပါက GUI ပေါ်လာမည်
+		if highPingDuration >= 60 and not isPromptShown then
+			isPromptShown = true
+			mainFrame.Visible = true
+		end
 
 		frameCount = 0
 		lastUpdate = currentTime
@@ -233,14 +256,12 @@ local function applyFastRejoinFFlags()
 	local setfflag = setfflag or set_fflag or (setfflag and setfflag)
 	if setfflag then
 		pcall(function()
-			-- MaxSlop & Scheduler Flags
 			setfflag("DFIntTaskSchedulerTargetFps", "9999")
 			setfflag("FIntTaskSchedulerTargetFps", "9999")
 			setfflag("MaxSlop", "-99999")
 			setfflag("FIntMaxSlop", "-99999")
 			setfflag("DFIntMaxSlop", "-99999")
 			
-			-- Fast Teleport Optimizations
 			setfflag("TeleportInGameQueueMode", "True")
 			setfflag("PreloadAllAssetsOnTeleport", "False")
 			setfflag("FFlagDebugDisableTeleportGui", "True")
@@ -250,19 +271,19 @@ local function applyFastRejoinFFlags()
 	end
 end
 
--- No Button: GUI ဖျက်မည်
+-- No Button: GUI ကို ခဏပြန်ပိတ်ထားပြီး Timer ကို ပြန်စမည်
 noBtn.MouseButton1Click:Connect(function()
-	screenGui:Destroy()
+	mainFrame.Visible = false
+	isPromptShown = false
+	highPingDuration = 0
 end)
 
--- Yes Button: MaxSlop ချိန်ပြီး Fast Rejoin Script ဖြင့် Teleport လုပ်မည်
+-- Yes Button: MaxSlop ချိန်ပြီး Fast Rejoin ဖြင့် Teleport လုပ်မည်
 yesBtn.MouseButton1Click:Connect(function()
 	local queue_on_teleport = queue_on_teleport or (syn and syn.queue_on_teleport) or (fluxus and fluxus.queue_on_teleport)
 	
-	-- MaxSlop -99999 နှင့် Fast Join FFlags အတည်ပြုခြင်း
 	applyFastRejoinFFlags()
 
-	-- Rejoin ပြီးပါက Anti-Lag Script ကို ပြန်လည် execute လုပ်ရန် queue
 	if queue_on_teleport then
 		queue_on_teleport([[
 			repeat task.wait() until game:IsLoaded()
@@ -272,7 +293,6 @@ yesBtn.MouseButton1Click:Connect(function()
 
 	yesBtn.Text = "Rejoining..."
 
-	-- Fast Rejoin Execution
 	task.spawn(function()
 		if #Players:GetPlayers() <= 1 then
 			TeleportService:Teleport(game.PlaceId, LocalPlayer)
