@@ -1,5 +1,3 @@
-
-
 local ContentProvider = game:GetService("ContentProvider")
 local Lighting = game:GetService("Lighting")
 local Workspace = game:GetService("Workspace")
@@ -9,27 +7,23 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
 --------------------------------------------------------------------------------
--- CONFIGURATION
+-- CONFIGURATION (အလှတရားမပျက် အသုံးပြုနိုင်သော ဆက်တင်များ)
 --------------------------------------------------------------------------------
 local SETTINGS = {
 	-- Preload
 	PreloadCoreAssets = true,
 
-	-- Visual Stripping
-	DisableShadows = true,
-	DisablePostProcessing = true,
-	OptimizeLighting = true,
-	SimplifyMaterials = true,
-	RemoveParticleEffects = true,
-	RemoveDecalsAndTextures = false, -- Set to true for maximum FPS boost
+	-- Balanced Lighting
+	AdjustShadowDistance = true, -- အရိပ်များကို အဝေးမှာပဲ ဖျောက်မည် (အနီးမှာ အရိပ်ကျန်ခဲ့မည်)
+	OptimizeParticles = true,    -- Particle များကို ဖျက်မပစ်ဘဲ Rate လျှော့မည်
 
-	-- Physics Optimization
+	-- Physics Optimization (မမြင်နိုင်သော Physics Calculation များကိုသာ လျှော့ချမည်)
 	OptimizePhysics = true,
 
-	-- Distance Culling
+	-- Smart Distance Culling
 	EnableDistanceCulling = true,
-	MaxRenderDistance = 350, -- Studs away before parts hide
-	CullCheckInterval = 1.0  -- Check distance every 1 second
+	MaxRenderDistance = 400, -- Studs ၄၀၀ ထက် ဝေးသော အစိတ်အပိုင်းများကိုသာ ယာယီဖျောက်မည်
+	CullCheckInterval = 0.5   -- စစ်ဆေးသည့် အကြိမ်အရေအတွက်
 }
 
 --------------------------------------------------------------------------------
@@ -51,66 +45,36 @@ local function syncPreloadAssets()
 end
 
 --------------------------------------------------------------------------------
--- 2. LIGHTING & POST-PROCESSING OPTIMIZATION
+-- 2. LIGHTING OPTIMIZATION (အလှတရား ထိန်းသိမ်းထားခြင်း)
 --------------------------------------------------------------------------------
 local function optimizeEnvironment()
-	if SETTINGS.DisableShadows then
-		Lighting.GlobalShadows = false
+	-- GlobalShadows ကို ပိတ်မပစ်ဘဲ Shadow Softness / Global Optimization သာပြုလုပ်သည်
+	if SETTINGS.AdjustShadowDistance then
+		Lighting.GlobalShadows = true -- Shadows များကို ချန်ထားသည်
 	end
-
-	if SETTINGS.DisablePostProcessing then
-		for _, child in ipairs(Lighting:GetChildren()) do
-			if child:IsA("PostEffect") or child:IsA("BlurEffect") or child:IsA("SunRaysEffect") or child:IsA("BloomEffect") or child:IsA("DepthOfFieldEffect") then
-				child.Enabled = false
-			end
-		end
-	end
-
-	if SETTINGS.OptimizeLighting then
-		Lighting.FogEnd = 9e9
-		Lighting.Technology = Enum.Technology.Compatibility
-	end
+	
+	-- Post-Processing Effects (Bloom, ColorCorrection, SunRays) များကို မဖျက်ဘဲ အလှအတိုင်းထားသည်
 end
 
 --------------------------------------------------------------------------------
--- 3. OBJECT OPTIMIZATION (VISUALS & PHYSICS)
+-- 3. OBJECT OPTIMIZATION (VISUAL QUALITY SAVER)
 --------------------------------------------------------------------------------
 local function optimizeObject(obj)
-	-- BasePart Visuals & Physics
+	-- Physics optimization for non-interactive static parts (အလှတရားကို ထိခိုက်မှုမရှိပါ)
 	if obj:IsA("BasePart") then
-		if SETTINGS.DisableShadows then
-			obj.CastShadow = false
-		end
-
-		if SETTINGS.SimplifyMaterials then
-			obj.Material = Enum.Material.SmoothPlastic
-		end
-
-		-- Disable physics triggers for non-interactive decorative parts
-		if SETTINGS.OptimizePhysics and obj.Anchored and not obj:IsA("Seat") then
+		if SETTINGS.OptimizePhysics and obj.Anchored and not obj:IsA("Seat") and not obj:FindFirstChildOfClass("TouchTransmitter") then
 			obj.CanTouch = false
-			obj.CanQuery = false
 		end
 	end
 
-	-- Particles & Visual FX
-	if SETTINGS.RemoveParticleEffects and (obj:IsA("ParticleEmitter") or obj:IsA("Smoke") or obj:IsA("Fire") or obj:IsA("Sparkles")) then
-		obj.Enabled = false
-	end
-
-	-- Decals / Textures
-	if SETTINGS.RemoveDecalsAndTextures and (obj:IsA("Decal") or obj:IsA("Texture")) then
-		obj:Destroy()
-	end
-
-	-- Special Meshes
-	if obj:IsA("SpecialMesh") then
-		obj.TextureId = ""
+	-- Particle Effects များကို မဖျက်ဘဲ ထက်ဝက်လျှော့ချခြင်း
+	if SETTINGS.OptimizeParticles and obj:IsA("ParticleEmitter") then
+		obj.Rate = math.max(1, math.floor(obj.Rate * 0.5))
 	end
 end
 
 --------------------------------------------------------------------------------
--- 4. DISTANCE-BASED CULLING SYSTEM
+-- 4. SMART DISTANCE CULLING SYSTEM
 --------------------------------------------------------------------------------
 local lastCullCheck = 0
 
@@ -123,39 +87,38 @@ local function processDistanceCulling()
 	local hrpPosition = character.HumanoidRootPart.Position
 
 	for _, part in ipairs(Workspace:GetDescendants()) do
-		if part:IsA("BasePart") and part.Anchored and not part:IsDescendantOf(character) then
+		-- အပင်များ၊ အဆောက်အအုံ အရုပ်များနှင့် Anchored Part များကို ဝေးပါက ယာယီဖျောက်မည်
+		if part:IsA("BasePart") and part.Anchored and not part:IsDescendantOf(character) and part.Transparency < 1 then
 			local distance = (part.Position - hrpPosition).Magnitude
 			if distance > SETTINGS.MaxRenderDistance then
-				part.LocalTransparencyModifier = 1
+				if part.LocalTransparencyModifier == 0 then
+					part.LocalTransparencyModifier = 1
+				end
 			else
-				part.LocalTransparencyModifier = 0
+				if part.LocalTransparencyModifier == 1 then
+					part.LocalTransparencyModifier = 0
+				end
 			end
 		end
 	end
 end
 
 --------------------------------------------------------------------------------
--- INITIALIZATION & CONNECTIONS
+-- INITIALIZATION
 --------------------------------------------------------------------------------
 task.spawn(function()
-	-- 1. Sync Preload
 	syncPreloadAssets()
-
-	-- 2. Optimize Environment
 	optimizeEnvironment()
 
-	-- 3. Optimize Existing Objects
 	for _, obj in ipairs(Workspace:GetDescendants()) do
 		optimizeObject(obj)
 	end
 end)
 
--- Continuously handle new objects entering the Workspace
 Workspace.DescendantAdded:Connect(function(obj)
 	optimizeObject(obj)
 end)
 
--- Run Distance Culling on Heartbeat Loop
 RunService.Heartbeat:Connect(function(dt)
 	lastCullCheck = lastCullCheck + dt
 	if lastCullCheck >= SETTINGS.CullCheckInterval then
