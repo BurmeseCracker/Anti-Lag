@@ -227,18 +227,42 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- =========================================
--- 10. Button Click Actions
+-- 10. MaxSlop & Fast Rejoin Logic
 -- =========================================
+local function applyFastRejoinFFlags()
+	local setfflag = setfflag or set_fflag or (setfflag and setfflag)
+	if setfflag then
+		pcall(function()
+			-- MaxSlop & Scheduler Flags
+			setfflag("DFIntTaskSchedulerTargetFps", "9999")
+			setfflag("FIntTaskSchedulerTargetFps", "9999")
+			setfflag("MaxSlop", "-99999")
+			setfflag("FIntMaxSlop", "-99999")
+			setfflag("DFIntMaxSlop", "-99999")
+			
+			-- Fast Teleport Optimizations
+			setfflag("TeleportInGameQueueMode", "True")
+			setfflag("PreloadAllAssetsOnTeleport", "False")
+			setfflag("FFlagDebugDisableTeleportGui", "True")
+			setfflag("FFlagEnableFastTeleporting2", "True")
+			setfflag("FFlagTeleportServerTimeoutMs", "3000")
+		end)
+	end
+end
 
--- No Button: GUI ကို ဖျက်ပြီး ထွက်သွားမည်
+-- No Button: GUI ဖျက်မည်
 noBtn.MouseButton1Click:Connect(function()
 	screenGui:Destroy()
 end)
 
--- Yes Button: Rejoin Script run မည်
+-- Yes Button: MaxSlop ချိန်ပြီး Fast Rejoin Script ဖြင့် Teleport လုပ်မည်
 yesBtn.MouseButton1Click:Connect(function()
 	local queue_on_teleport = queue_on_teleport or (syn and syn.queue_on_teleport) or (fluxus and fluxus.queue_on_teleport)
 	
+	-- MaxSlop -99999 နှင့် Fast Join FFlags အတည်ပြုခြင်း
+	applyFastRejoinFFlags()
+
+	-- Rejoin ပြီးပါက Anti-Lag Script ကို ပြန်လည် execute လုပ်ရန် queue
 	if queue_on_teleport then
 		queue_on_teleport([[
 			repeat task.wait() until game:IsLoaded()
@@ -247,9 +271,13 @@ yesBtn.MouseButton1Click:Connect(function()
 	end
 
 	yesBtn.Text = "Rejoining..."
-	if #Players:GetPlayers() <= 1 then
-		TeleportService:Teleport(game.PlaceId, LocalPlayer)
-	else
-		TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
-	end
+
+	-- Fast Rejoin Execution
+	task.spawn(function()
+		if #Players:GetPlayers() <= 1 then
+			TeleportService:Teleport(game.PlaceId, LocalPlayer)
+		else
+			TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+		end
+	end)
 end)
