@@ -266,7 +266,7 @@ RunService.RenderStepped:Connect(function()
 		end
 
 		-- ၁ မိနစ် (၆၀ စက္ကန့်) ပြည့်ပါက Lag Detection Box ပေါ်လာမည်
-		if highPingTimer >= 60 and not isPromptShown then
+		if highPingTimer >= 30 and not isPromptShown then
 			isPromptShown = true
 			lagFrame.Visible = true
 		end
