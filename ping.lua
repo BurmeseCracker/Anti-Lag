@@ -14,17 +14,16 @@ screenGui.Name = "PingFPSGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = PlayerGui
 
--- 2. Main Frame (Draggable Box) ဖန်တီးခြင်း
+-- 2. Main Frame (Draggable Box)
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 160, 110)
+mainFrame.Size = UDim2.new(0, 240, 0, 185)
 mainFrame.Position = UDim2.new(0.05, 0, 0.1, 0)
 mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
 mainFrame.BorderSizePixel = 0
 mainFrame.Active = true
 mainFrame.Parent = screenGui
 
--- Rounded Corner & Stroke
 local uiCorner = Instance.new("UICorner")
 uiCorner.CornerRadius = UDim.new(0, 12)
 uiCorner.Parent = mainFrame
@@ -41,56 +40,118 @@ uiPadding.PaddingLeft = UDim.new(0, 12)
 uiPadding.PaddingRight = UDim.new(0, 12)
 uiPadding.Parent = mainFrame
 
--- UI Layout
 local listLayout = Instance.new("UIListLayout")
 listLayout.SortOrder = Enum.SortOrder.LayoutOrder
 listLayout.Padding = UDim.new(0, 6)
 listLayout.Parent = mainFrame
 
--- 3. FPS Label
+-- 3. Header Title (Lag Detection)
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Name = "TitleLabel"
+titleLabel.Size = UDim2.new(1, 0, 0, 20)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextSize = 15
+titleLabel.TextColor3 = Color3.fromRGB(255, 85, 85)
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Text = "Lag Detection"
+titleLabel.LayoutOrder = 1
+titleLabel.Parent = mainFrame
+
+-- 4. FPS & Ping Display
+local statsContainer = Instance.new("Frame")
+statsContainer.Size = UDim2.new(1, 0, 0, 22)
+statsContainer.BackgroundTransparency = 1
+statsContainer.LayoutOrder = 2
+statsContainer.Parent = mainFrame
+
+local statsLayout = Instance.new("UIListLayout")
+statsLayout.FillDirection = Enum.FillDirection.Horizontal
+statsLayout.HorizontalAlignment = Enum.HorizontalAlignment.SpaceBetween
+statsLayout.Parent = statsContainer
+
 local fpsLabel = Instance.new("TextLabel")
 fpsLabel.Name = "FPSLabel"
-fpsLabel.Size = UDim2.new(1, 0, 0, 22)
+fpsLabel.Size = UDim2.new(0.48, 0, 1, 0)
 fpsLabel.BackgroundTransparency = 1
 fpsLabel.Font = Enum.Font.GothamBold
-fpsLabel.TextSize = 14
+fpsLabel.TextSize = 13
 fpsLabel.TextColor3 = Color3.fromRGB(0, 255, 120)
 fpsLabel.TextXAlignment = Enum.TextXAlignment.Left
-fpsLabel.Text = "FPS  : --"
-fpsLabel.LayoutOrder = 1
-fpsLabel.Parent = mainFrame
+fpsLabel.Text = "FPS: --"
+fpsLabel.Parent = statsContainer
 
--- 4. Ping Label
 local pingLabel = Instance.new("TextLabel")
 pingLabel.Name = "PingLabel"
-pingLabel.Size = UDim2.new(1, 0, 0, 22)
+pingLabel.Size = UDim2.new(0.48, 0, 1, 0)
 pingLabel.BackgroundTransparency = 1
 pingLabel.Font = Enum.Font.GothamBold
-pingLabel.TextSize = 14
+pingLabel.TextSize = 13
 pingLabel.TextColor3 = Color3.fromRGB(0, 255, 120)
-pingLabel.TextXAlignment = Enum.TextXAlignment.Left
-pingLabel.Text = "PING : -- ms"
-pingLabel.LayoutOrder = 2
-pingLabel.Parent = mainFrame
+pingLabel.TextXAlignment = Enum.TextXAlignment.Right
+pingLabel.Text = "PING: -- ms"
+pingLabel.Parent = statsContainer
 
--- 5. Rejoin Button
-local rejoinBtn = Instance.new("TextButton")
-rejoinBtn.Name = "RejoinButton"
-rejoinBtn.Size = UDim2.new(1, 0, 0, 24)
-rejoinBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
-rejoinBtn.Font = Enum.Font.GothamBold
-rejoinBtn.TextSize = 12
-rejoinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-rejoinBtn.Text = "Rejoin Server"
-rejoinBtn.LayoutOrder = 3
-rejoinBtn.Parent = mainFrame
+-- 5. Notice Message
+local descLabel = Instance.new("TextLabel")
+descLabel.Name = "DescLabel"
+descLabel.Size = UDim2.new(1, 0, 0, 40)
+descLabel.BackgroundTransparency = 1
+descLabel.Font = Enum.Font.Gotham
+descLabel.TextSize = 12
+descLabel.TextColor3 = Color3.fromRGB(200, 200, 210)
+descLabel.TextWrapped = true
+descLabel.TextXAlignment = Enum.TextXAlignment.Left
+descLabel.TextYAlignment = Enum.TextYAlignment.Top
+descLabel.Text = "Rejoining will be more better experienced, wanna rejoin ?"
+descLabel.LayoutOrder = 3
+descLabel.Parent = mainFrame
 
-local btnCorner = Instance.new("UICorner")
-btnCorner.CornerRadius = UDim.new(0, 6)
-btnCorner.Parent = rejoinBtn
+-- 6. Buttons Container (Yes / No)
+local buttonContainer = Instance.new("Frame")
+buttonContainer.Name = "ButtonContainer"
+buttonContainer.Size = UDim2.new(1, 0, 0, 32)
+buttonContainer.BackgroundTransparency = 1
+buttonContainer.LayoutOrder = 4
+buttonContainer.Parent = mainFrame
+
+local buttonLayout = Instance.new("UIListLayout")
+buttonLayout.FillDirection = Enum.FillDirection.Horizontal
+buttonLayout.Padding = UDim.new(0, 8)
+buttonLayout.Parent = buttonContainer
+
+-- Yes Button
+local yesBtn = Instance.new("TextButton")
+yesBtn.Name = "YesButton"
+yesBtn.Size = UDim2.new(0.5, -4, 1, 0)
+yesBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 100)
+yesBtn.Font = Enum.Font.GothamBold
+yesBtn.TextSize = 13
+yesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+yesBtn.Text = "Yes"
+yesBtn.Parent = buttonContainer
+
+local yesCorner = Instance.new("UICorner")
+yesCorner.CornerRadius = UDim.new(0, 6)
+yesCorner.Parent = yesBtn
+
+-- No Button
+local noBtn = Instance.new("TextButton")
+noBtn.Name = "NoButton"
+noBtn.Size = UDim2.new(0.5, -4, 1, 0)
+noBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+noBtn.Font = Enum.Font.GothamBold
+noBtn.TextSize = 13
+noBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+noBtn.Text = "No"
+noBtn.Parent = buttonContainer
+
+local noCorner = Instance.new("UICorner")
+noCorner.CornerRadius = UDim.new(0, 6)
+noCorner.Parent = noBtn
 
 -- =========================================
--- 6. Draggable System
+-- 7. Draggable System
 -- =========================================
 local dragging = false
 local dragInput, dragStart, startPos
@@ -127,30 +188,22 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 -- =========================================
--- 7. Dynamic Color Logic
+-- 8. Dynamic Color Logic
 -- =========================================
 local function getFpsColor(fps)
-	if fps >= 50 then
-		return Color3.fromRGB(0, 255, 120)
-	elseif fps >= 30 then
-		return Color3.fromRGB(255, 200, 0)
-	else
-		return Color3.fromRGB(255, 50, 50)
-	end
+	if fps >= 50 then return Color3.fromRGB(0, 255, 120)
+	elseif fps >= 30 then return Color3.fromRGB(255, 200, 0)
+	else return Color3.fromRGB(255, 50, 50) end
 end
 
 local function getPingColor(ping)
-	if ping <= 100 then
-		return Color3.fromRGB(0, 255, 120)
-	elseif ping <= 200 then
-		return Color3.fromRGB(255, 200, 0)
-	else
-		return Color3.fromRGB(255, 40, 40)
-	end
+	if ping <= 100 then return Color3.fromRGB(0, 255, 120)
+	elseif ping <= 200 then return Color3.fromRGB(255, 200, 0)
+	else return Color3.fromRGB(255, 40, 40) end
 end
 
 -- =========================================
--- 8. FPS & Ping Tracker Loop
+-- 9. FPS & Ping Loop
 -- =========================================
 local lastUpdate = tick()
 local frameCount = 0
@@ -161,11 +214,11 @@ RunService.RenderStepped:Connect(function()
 
 	if currentTime - lastUpdate >= 0.5 then
 		local fps = math.round(frameCount / (currentTime - lastUpdate))
-		fpsLabel.Text = string.format("FPS  : %d", fps)
+		fpsLabel.Text = string.format("FPS: %d", fps)
 		fpsLabel.TextColor3 = getFpsColor(fps)
 
 		local ping = math.round(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
-		pingLabel.Text = string.format("PING : %d ms", ping)
+		pingLabel.Text = string.format("PING: %d ms", ping)
 		pingLabel.TextColor3 = getPingColor(ping)
 
 		frameCount = 0
@@ -174,9 +227,16 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- =========================================
--- 9. Rejoin Logic & Teleport Queue
+-- 10. Button Click Actions
 -- =========================================
-rejoinBtn.MouseButton1Click:Connect(function()
+
+-- No Button: GUI ကို ဖျက်ပြီး ထွက်သွားမည်
+noBtn.MouseButton1Click:Connect(function()
+	screenGui:Destroy()
+end)
+
+-- Yes Button: Rejoin Script run မည်
+yesBtn.MouseButton1Click:Connect(function()
 	local queue_on_teleport = queue_on_teleport or (syn and syn.queue_on_teleport) or (fluxus and fluxus.queue_on_teleport)
 	
 	if queue_on_teleport then
@@ -186,7 +246,7 @@ rejoinBtn.MouseButton1Click:Connect(function()
 		]])
 	end
 
-	rejoinBtn.Text = "Rejoining..."
+	yesBtn.Text = "Rejoining..."
 	if #Players:GetPlayers() <= 1 then
 		TeleportService:Teleport(game.PlaceId, LocalPlayer)
 	else
