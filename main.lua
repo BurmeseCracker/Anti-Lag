@@ -21,6 +21,7 @@ local function getGitHubFile(fileName)
 end
 
 local callPing = getGitHubFile("ping.lua")
+local callOpt = getGitHubFile("opt.lua")
 
 
 InitializeGui(AnimationDatabase, CoreHookFunction)
