@@ -19,7 +19,7 @@ local function getGitHubFile(fileName)
 	
 	return executableCode()
 end
-
+local callGui = getGitHubFile("gui.lua")
 local callPing = getGitHubFile("ping.lua")
 local callOpt = getGitHubFile("opt.lua")
 
