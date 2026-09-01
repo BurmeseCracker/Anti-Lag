@@ -1,5 +1,5 @@
 -- main.lua
-local GithubBase = "https://raw.githubusercontent.com/BurmeseCracker/RBX/refs/heads/main/"
+local GithubBase = "https://raw.githubusercontent.com/BurmeseCracker/Anti-Lag/refs/heads/main/"
 
 local function getGitHubFile(fileName)
 	local fileUrl = GithubBase .. fileName
