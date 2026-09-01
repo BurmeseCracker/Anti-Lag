@@ -59,6 +59,7 @@ titleLabel.Text = "Lag Detection"
 titleLabel.LayoutOrder = 1
 titleLabel.Parent = mainFrame
 
+
 -- 4. FPS & Ping Display
 local statsContainer = Instance.new("Frame")
 statsContainer.Name = "StatsContainer"
@@ -69,9 +70,10 @@ statsContainer.Parent = mainFrame
 
 local statsLayout = Instance.new("UIListLayout")
 statsLayout.FillDirection = Enum.FillDirection.Horizontal
-statsLayout.HorizontalAlignment = Enum.HorizontalAlignment.SpaceBetween
+statsLayout.HorizontalAlignment = Enum.HorizontalAlignment.SpaceBetween -- ဒီနေရာမှာ ပြန်ပြင်ပါ
 statsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 statsLayout.Parent = statsContainer
+
 
 local fpsLabel = Instance.new("TextLabel")
 fpsLabel.Name = "FPSLabel"
