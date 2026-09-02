@@ -1,8 +1,6 @@
 local ContentProvider = game:GetService("ContentProvider")
-local Lighting = game:GetService("Lighting")
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
 
@@ -10,91 +8,69 @@ local LocalPlayer = Players.LocalPlayer
 -- CONFIGURATION
 --------------------------------------------------------------------------------
 local SETTINGS = {
-	PreloadCoreAssets = true,
 	OptimizeParticles = true,
-	
-	EnableDistanceCulling = true,
-	MaxRenderDistance = 300, -- Studs ၃၀၀ ထက် ဝေးပါက ခဏဖျောက်မည်
-	CullCheckInterval = 1.5   -- စက္ကန့် ၁.၅ စက္ကန့်မှ တစ်ခါပဲ စစ်မည် (CPU Lag သက်သာစေရန်)
+	DisableCastShadows = true, -- Block တွေရဲ့ အရိပ်ကို ပိတ်ပြီး FPS မြှင့်မည်
+	LowPhysicsPrecision = true -- Non-anchored Parts များကို Physics စိစစ်မှု လျှော့မည်
 }
 
 --------------------------------------------------------------------------------
--- 1. OPTIMIZED PRELOAD (Lag မဖြစ်အောင် ခွဲဆွဲခြင်း)
+-- SAFE LIGHTING OPTIMIZATION
 --------------------------------------------------------------------------------
-local function syncPreloadAssets()
-	if not SETTINGS.PreloadCoreAssets then return end
-
-	local assetsToPreload = Workspace:GetChildren()
-	
-	-- Asset များကို တစ်ပြိုင်နက်တည်း မဆွဲဘဲ ခွဲဆွဲခြင်းဖြင့် Freeze Lag ကို ကာကွယ်သည်
-	task.spawn(function()
-		for i = 1, #assetsToPreload do
-			pcall(function()
-				ContentProvider:PreloadAsync({assetsToPreload[i]})
-			end)
-			if i % 5 == 0 then task.wait() end -- Frame Drop မဖြစ်အောင် ခဏနားသည်
-		end
-	end)
+local function optimizeLighting()
+	-- Frame drop သက်သာစေရန် Global Shadow ကို ဖျောက်ထားပါမည်
+	game:GetService("Lighting").GlobalShadows = false
 end
 
 --------------------------------------------------------------------------------
--- 2. OBJECT OPTIMIZATION
+-- ONE-TIME OBJECT OPTIMIZER (Loop မသုံးဘဲ ၁ ကြိမ်သာ ပြင်မည်)
 --------------------------------------------------------------------------------
 local function optimizeObject(obj)
-	-- Particle Effects လျှော့ချခြင်း
+	-- 1. Particle Emitters (FPS လျှော့မသွားအောင် Particle အရေအတွက် လျှော့မည်)
 	if SETTINGS.OptimizeParticles and obj:IsA("ParticleEmitter") then
-		obj.Rate = math.max(1, math.floor(obj.Rate * 0.4))
+		obj.Rate = math.clamp(math.floor(obj.Rate * 0.2), 1, 5)
+	end
+
+	-- 2. BaseParts Optimization
+	if obj:IsA("BasePart") then
+		-- CastShadow ပိတ်ခြင်းဖြင့် GPU Frame Drop ကို တားဆီးမည်
+		if SETTINGS.DisableCastShadows then
+			obj.CastShadow = false
+		end
+		
+		-- Physics Calculation ကို အနည်းဆုံးအထိ လျှော့ချမည်
+		if SETTINGS.LowPhysicsPrecision and obj.Anchored then
+			obj.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
+		end
+	end
+
+	-- 3. Decals & Textures (Frame Drop မဖြစ်အောင် Material ရှင်းမည်)
+	if obj:IsA("Decal") or obj:IsA("Texture") then
+		if obj.Parent and not obj.Parent:IsA("Model") then
+			-- အရေးမကြီးသော Texture များကို လျှော့ချရန်
+			obj.Texture = ""
+		end
 	end
 end
 
 --------------------------------------------------------------------------------
--- 3. LAG-FREE DISTANCE CULLING SYSTEM
---------------------------------------------------------------------------------
-local lastCullCheck = 0
-
-local function processDistanceCulling()
-	if not SETTINGS.EnableDistanceCulling then return end
-
-	local character = LocalPlayer.Character
-	if not character or not character:FindFirstChild("HumanoidRootPart") then return end
-
-	local hrpPosition = character.HumanoidRootPart.Position
-
-	-- Workspace တစ်ခုလုံးကို မရှာတော့ဘဲ တကယ့် BasePart များကိုသာ သီးသန့် ရယူစစ်ဆေးမည်
-	task.spawn(function()
-		for _, part in ipairs(Workspace:GetChildren()) do
-			-- Player Character များကို မထိခိုက်စေရန်
-			if part:IsA("BasePart") and part.Anchored and part.Transparency < 1 then
-				local distance = (part.Position - hrpPosition).Magnitude
-				if distance > SETTINGS.MaxRenderDistance then
-					part.LocalTransparencyModifier = 1
-				else
-					part.LocalTransparencyModifier = 0
-				end
-			end
-		end
-	end)
-end
-
---------------------------------------------------------------------------------
--- INITIALIZATION
+-- INITIALIZATION (BACKGROUND TASK)
 --------------------------------------------------------------------------------
 task.spawn(function()
-	syncPreloadAssets()
+	optimizeLighting()
 
-	for _, obj in ipairs(Workspace:GetDescendants()) do
-		optimizeObject(obj)
+	-- Workspace ထဲရှိ Object များကို Render Engine မထိခိုက်စေဘဲ ခွဲခြား ပြင်ဆင်မည်
+	local descendants = Workspace:GetDescendants()
+	for i = 1, #descendants do
+		optimizeObject(descendants[i])
+		
+		-- Object 100 ခုတိုင်းမှာ Frame Drop မဖြစ်အောင် 1 Frame နားပါမည်
+		if i % 100 == 0 then
+			task.wait()
+		end
 	end
 end)
 
+-- Object သစ်များ ဝင်လာပါက သီးသန့် ပြင်ပေးမည်
 Workspace.DescendantAdded:Connect(function(obj)
 	optimizeObject(obj)
-end)
-
-RunService.Heartbeat:Connect(function(dt)
-	lastCullCheck = lastCullCheck + dt
-	if lastCullCheck >= SETTINGS.CullCheckInterval then
-		lastCullCheck = 0
-		processDistanceCulling()
-	end
 end)
